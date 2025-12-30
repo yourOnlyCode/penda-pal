@@ -1,7 +1,21 @@
 import './globals.css'
 import { Inter } from 'next/font/google'
+import localFont from 'next/font/local'
+import { SessionProvider } from '@/components/providers/SessionProvider'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
+
+const coiny = localFont({
+  src: [
+    {
+      path: '../../public/Coiny/Coiny-Regular.ttf',
+      weight: '400',
+      style: 'normal',
+    },
+  ],
+  variable: '--font-coiny',
+  display: 'swap',
+})
 
 export const metadata = {
   title: 'Penda - Connect with Penpals Worldwide',
@@ -15,7 +29,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={`${inter.variable} ${coiny.variable} font-sans`}>
+        <SessionProvider>{children}</SessionProvider>
+      </body>
     </html>
   )
 }

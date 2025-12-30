@@ -55,5 +55,189 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-coiny), var(--font-inter), system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .emoji {
+    font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', 'Android Emoji', 'EmojiSymbols', 'EmojiOne Mozilla', 'Twemoji Mozilla', 'Segoe UI', sans-serif;
+    font-style: normal;
+    font-weight: normal;
+    line-height: 1;
+    vertical-align: baseline;
+  }
+
+  @keyframes scroll {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  .animate-scroll {
+    animation: scroll 20s linear infinite;
+  }
+
+  @keyframes phraseAnimation {
+    0% {
+      transform: translateY(0.9em);
+      opacity: 0;
+    }
+    25% {
+      transform: translateY(0.35em);
+      opacity: 1;
+    }
+    30% {
+      transform: translateY(0.38em);
+    }
+    85% {
+      transform: translateY(0.38em);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-0.4em);
+      opacity: 0;
+    }
+  }
+
+  .phrase-animation {
+    animation: phraseAnimation 2s ease-in-out forwards;
+    transform: translateY(0.9em);
+    opacity: 0;
+  }
+
+  @keyframes pandaBounceAndRoll {
+    /* Bounce beside text (0-35%) - Higher bounce, closer to text */
+    0% {
+      left: calc(50% - 7rem);
+      transform: translateY(0) rotate(0deg);
+      opacity: 1;
+    }
+    8% {
+      transform: translateY(-1rem) rotate(0deg);
+    }
+    16% {
+      transform: translateY(0) rotate(0deg);
+    }
+    24% {
+      transform: translateY(-0.8rem) rotate(0deg);
+    }
+    35% {
+      transform: translateY(0) rotate(0deg);
+      left: calc(50% - 7rem);
+    }
+    /* Smooth continuous roll to right edge and off button (35-70%) - Multiple rotations */
+    36% {
+      left: calc(50% - 7rem);
+      transform: translateY(0) rotate(0deg);
+      opacity: 1;
+    }
+    65% {
+      left: calc(100% - 2.5rem);
+      transform: translateY(0) rotate(900deg);
+      opacity: 1;
+    }
+    70% {
+      left: calc(100% + 1rem);
+      transform: translateY(0) rotate(1080deg);
+      opacity: 0;
+    }
+    /* Vanish and reappear off left side (70-75%) - Keep rotation continuous */
+    72% {
+      left: -2rem;
+      transform: translateY(0) rotate(1080deg);
+      opacity: 0;
+    }
+    75% {
+      left: -2rem;
+      transform: translateY(0) rotate(1080deg);
+      opacity: 1;
+    }
+    /* Smooth continuous roll back from left side into starting position (75-85%) - Continue rotating */
+    80% {
+      left: calc(50% - 7.5rem);
+      transform: translateY(0) rotate(1260deg);
+      opacity: 1;
+    }
+    85% {
+      left: calc(50% - 7rem);
+      transform: translateY(0) rotate(1440deg);
+      opacity: 1;
+    }
+    /* Bounce again (85-100%) - Higher bounce, keep rotation constant */
+    90% {
+      transform: translateY(-0.9rem) rotate(1440deg);
+    }
+    95% {
+      transform: translateY(0) rotate(1440deg);
+    }
+    100% {
+      left: calc(50% - 7rem);
+      transform: translateY(0) rotate(1440deg);
+      opacity: 1;
+    }
+  }
+
+  .animate-panda-bounce-roll {
+    animation: pandaBounceAndRoll 4s linear infinite;
+  }
+
+  @keyframes dotAnimation {
+    0%, 20% {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    80%, 100% {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+  }
+
+  .animate-dot-1 {
+    animation: dotAnimation 1.4s ease-in-out infinite;
+    animation-delay: 0s;
+  }
+
+  .animate-dot-2 {
+    animation: dotAnimation 1.4s ease-in-out infinite;
+    animation-delay: 0.2s;
+  }
+
+  .animate-dot-3 {
+    animation: dotAnimation 1.4s ease-in-out infinite;
+    animation-delay: 0.4s;
+  }
+
+  /* PendaPass Flip Animation */
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  .transform-style-3d {
+    transform-style: preserve-3d;
+  }
+
+  .rotate-y-180 {
+    transform: rotateY(180deg);
+  }
+
+  /* Prevent blurring on hover transforms */
+  .hover-scale-clear {
+    transform: translateZ(0);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+
+  .hover-scale-clear:hover {
+    transform: translateZ(0) scale(1.02);
   }
 }

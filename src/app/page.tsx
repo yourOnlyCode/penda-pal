@@ -1,8 +1,12 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Sparkles, Shield, MessageCircle, Heart, Globe, Zap } from 'lucide-react'
+import { Sparkles, Shield, Heart, Globe, Zap, Brain, Smile, Users } from 'lucide-react'
+import { PandaIcon } from '@/components/PandaIcon'
 import { prisma } from '@/lib/prisma'
+import { PandaLogo } from '@/components/PandaLogo'
+import { RotatingText } from '@/components/RotatingText'
+import { ScrollingPandas } from '@/components/ScrollingPandas'
 
 async function getUserCount() {
   try {
@@ -25,22 +29,30 @@ export default async function Home() {
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-8 inline-flex items-center gap-2 rounded-full border bg-white/50 px-4 py-2 text-sm backdrop-blur-sm dark:bg-gray-900/50">
               <Sparkles className="h-4 w-4 text-purple-600" />
-              <span className="font-medium">Matching Pendapals at 1,000 users!</span>
+              <span className="font-medium">Matching Pendapals when we reach 1,000 users!</span>
             </div>
 
             <div className="mb-6 text-sm text-muted-foreground">
               {userCount}/1,000
             </div>
 
-            <h1 className="mb-6 text-6xl font-bold tracking-tight sm:text-7xl">
-              <span className="inline-block animate-bounce">🐼</span> Penda
+            <h1 className="mb-6 flex items-center justify-center gap-4 text-6xl font-bold tracking-tight sm:text-7xl">
+              <PandaLogo />
+              <span>Penda</span>
             </h1>
+
+            <div className="mb-6 rounded-lg border border-purple-200 bg-purple-50/50 p-6 dark:border-purple-800 dark:bg-purple-950/20">
+              <p className="text-2xl font-semibold leading-relaxed text-purple-900 dark:text-purple-100 sm:text-3xl">
+                Meet your next{' '}
+                <RotatingText />
+              </p>
+            </div>
 
             <p className="mb-4 text-xl text-muted-foreground sm:text-2xl">
               Your next penpal is waiting
             </p>
 
-            <p className="mb-12 text-lg text-muted-foreground">
+            <p className="mb-6 text-lg text-muted-foreground">
               Get randomly matched with someone from anywhere in the world. Share stories, make friends, and discover new cultures through secure, real-time messaging.
             </p>
 
@@ -59,10 +71,36 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* Scrolling Pandas Divider */}
+      <ScrollingPandas />
+
+      {/* Mental Health Benefits Section */}
+      <section className="border-t bg-gradient-to-b from-white to-purple-50/30 dark:from-gray-900 dark:to-purple-950/10">
+        <div className="container mx-auto px-4 py-24">
+          <div className="mx-auto max-w-4xl">
+            <div className="mb-12 text-center">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-purple-100 px-4 py-2 dark:bg-purple-900/20">
+                <Brain className="h-5 w-5 text-purple-600" />
+                <span className="font-semibold text-purple-900 dark:text-purple-100">
+                  Your Mental Health Matters
+                </span>
+              </div>
+              <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
+                Friendships That Heal
+              </h2>
+              <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+                In a world that can feel isolating, genuine connections are more than just nice to have—they're essential for our wellbeing.
+              </p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
       {/* Features Section */}
       <section id="features" className="container mx-auto px-4 py-24">
         <div className="mb-16 text-center">
-          <h2 className="mb-4 text-3xl font-bold sm:text-4xl">Why Penda?</h2>
+          <h2 className="mb-4 text-3xl font-bold sm:text-4xl">Help Pendapal Grow!</h2>
           <p className="text-lg text-muted-foreground">
             A safe, fun way to connect with people worldwide
           </p>
@@ -95,8 +133,8 @@ export default async function Home() {
 
           <Card className="border-2 transition-all hover:shadow-lg">
             <CardHeader>
-              <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/20">
-                <MessageCircle className="h-6 w-6 text-blue-600" />
+              <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900/20">
+                <PandaIcon size={24} />
               </div>
               <CardTitle>Real-time Chat</CardTitle>
               <CardDescription>
@@ -112,7 +150,7 @@ export default async function Home() {
               </div>
               <CardTitle>Meaningful Connections</CardTitle>
               <CardDescription>
-                2-week minimum relationship period encourages real friendships, not just quick chats.
+                2-week minimum relationship period encourages real friendships that support your mental health, not just quick chats.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -149,13 +187,16 @@ export default async function Home() {
           <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
             Ready to meet your penpal?
           </h2>
-          <p className="mb-8 text-lg text-muted-foreground">
+          <p className="mb-4 text-lg text-muted-foreground">
             Join thousands of people making friends around the world
           </p>
+          <p className="mb-8 text-base text-muted-foreground">
+            Every friendship starts with a single message. Take that first step toward better mental health and genuine connection.
+          </p>
           <Button asChild size="lg" className="text-base">
-            <Link href="/auth/signin">
+            <Link href="/auth/signin" className="flex items-center gap-2">
               Start Chatting Now
-              <MessageCircle className="ml-2 h-4 w-4" />
+              <PandaIcon size={16} />
             </Link>
           </Button>
         </div>

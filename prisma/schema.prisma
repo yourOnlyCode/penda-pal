@@ -11,8 +11,20 @@ model User {
   id                String    @id @default(cuid())
   email             String    @unique
   name              String?
+  password          String?   // Hashed password for email/password auth
   age               Int?
-  interests         String[]
+  interests         String[]  // Highly considered in matching
+  bio               String?   // Blog-style about section
+  status            String?   // "What I'm doing right now"
+  country           String?
+  city              String?
+  coverImage        String?   // Backdrop photo for PendaPass
+  favoriteFoods     String[]  // Array of favorite foods
+  activities        String[]  // Array of favorite activities
+  placesVisited     String[]  // Places the user has been
+  placesWishlist    String[]  // Places the user wants to go
+  pendapassTheme    String?   @default("purple") // Color theme for PendaPass: purple, blue, green, pink, orange, teal
+  darkMode          String?   @default("system") // dark, light, or system
   isMinor           Boolean   @default(false)
   isVerified        Boolean   @default(false)
   stripeCustomerId  String?
@@ -25,11 +37,12 @@ model User {
   accounts          Account[]
   sessions          Session[]
   sentMessages      Message[] @relation("SentMessages")
-  penpalsAsUser1    Penpal[]  @relation("User1Penpals")
-  penpalsAsUser2    Penpal[]  @relation("User2Penpals")
+  penpalsAsUser1    Penpal[]     @relation("User1Penpals")
+  penpalsAsUser2    Penpal[]     @relation("User2Penpals")
   waitlist          Waitlist?
-  reportsCreated    Report[]  @relation("Reporter")
-  reportsReceived   Report[]  @relation("Reported")
+  reportsCreated    Report[]     @relation("Reporter")
+  reportsReceived   Report[]     @relation("Reported")
+  dailyStatuses     DailyStatus[]
 }
 
 model Account {
@@ -133,4 +146,20 @@ model Sticker {
   name     String
   imageUrl String
   category String @default("default")
+}
+
+model DailyStatus {
+  id        String   @id @default(cuid())
+  userId    String
+  content   String
+  mediaUrl  String?  // Photo or video URL
+  mediaType String?  // "image" or "video"
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date]) // One status per user per day
+  @@index([userId, date])
 }
