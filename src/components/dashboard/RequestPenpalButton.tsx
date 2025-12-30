@@ -5,18 +5,21 @@ import { Button } from '@/components/ui/button'
 import { PandaIcon } from '@/components/PandaIcon'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import { PendaPassTheme, getThemeColors } from '@/lib/themes'
 
 interface RequestPenpalButtonProps {
   userId: string
   isPending?: boolean
+  theme?: PendaPassTheme
 }
 
-export function RequestPenpalButton({ userId, isPending: initialPending = false }: RequestPenpalButtonProps) {
+export function RequestPenpalButton({ userId, isPending: initialPending = false, theme = 'purple' }: RequestPenpalButtonProps) {
   const [loading, setLoading] = useState(false)
   const [isPending, setIsPending] = useState(initialPending)
   const [pandas, setPandas] = useState<number[]>([])
   const router = useRouter()
   const buttonRef = useRef<HTMLButtonElement>(null)
+  const themeColors = getThemeColors(theme)
 
   useEffect(() => {
     // Create pandas for scrolling animation in pending state
@@ -68,7 +71,10 @@ export function RequestPenpalButton({ userId, isPending: initialPending = false 
         onClick={handleRequest}
         disabled={loading || isPending}
         size="lg"
-        className="w-full text-base h-10 rounded-lg relative overflow-hidden"
+        className="w-full text-base h-10 rounded-lg relative overflow-hidden text-white border-0"
+        style={{
+          background: themeColors.primaryGradient,
+        }}
       >
         <span className="relative z-10 flex items-center justify-center gap-3">
           {loading ? (

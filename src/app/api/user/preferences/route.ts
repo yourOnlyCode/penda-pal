@@ -11,26 +11,22 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { bio, country, city, favoriteFoods, activities, interests, placesVisited, placesWishlist, pendapassTheme } = await req.json()
+    const { darkMode } = await req.json()
+
+    if (darkMode && !['dark', 'light', 'system'].includes(darkMode)) {
+      return NextResponse.json({ error: 'Invalid darkMode value' }, { status: 400 })
+    }
 
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
       data: {
-        bio: bio || null,
-        country: country || null,
-        city: city || null,
-        favoriteFoods: favoriteFoods || [],
-        activities: activities || [],
-        interests: interests || [],
-        placesVisited: placesVisited || [],
-        placesWishlist: placesWishlist || [],
-        pendapassTheme: pendapassTheme || 'purple',
+        darkMode: darkMode || 'system',
       },
     })
 
     return NextResponse.json({ user: updatedUser })
   } catch (error: any) {
-    console.error('Profile update error:', error)
+    console.error('Preferences update error:', error)
     return NextResponse.json(
       { error: error.message || 'Internal server error' },
       { status: 500 }

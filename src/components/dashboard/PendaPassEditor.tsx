@@ -100,6 +100,10 @@ export function PendaPassEditor({ user, isOpen, onClose }: PendaPassEditorProps)
   const addInterest = (interest?: string) => {
     const interestToAdd = interest || newInterest.trim()
     if (interestToAdd && !interests.includes(interestToAdd)) {
+      if (interests.length >= 10) {
+        alert('Maximum of 10 interests allowed')
+        return
+      }
       setInterests([...interests, interestToAdd])
       setNewInterest('')
       setShowSuggestions(false)
@@ -145,7 +149,7 @@ export function PendaPassEditor({ user, isOpen, onClose }: PendaPassEditorProps)
           isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none h-0 overflow-hidden'
         }`}
       >
-        <div className="overflow-y-auto max-h-[80vh]">
+        <div className="overflow-y-auto max-h-[80vh] slim-scrollbar">
           {/* Header */}
           <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-indigo-600 z-10 px-6 py-4 flex items-center justify-between shadow-lg rounded-t-3xl">
             <div className="flex items-center gap-2">
@@ -196,12 +200,18 @@ export function PendaPassEditor({ user, isOpen, onClose }: PendaPassEditorProps)
                           : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600'
                       }`}
                     >
-                      <div className={`h-12 rounded-lg bg-gradient-to-r ${themeColors.primary} mb-2`} />
+                      <div 
+                        className="h-12 rounded-lg mb-2" 
+                        style={{ background: themeColors.primaryGradient }}
+                      />
                       <div className="text-xs font-medium text-zinc-700 dark:text-zinc-300 capitalize text-center">
                         {theme}
                       </div>
                       {selectedTheme === theme && (
-                        <div className="absolute top-2 right-2 w-5 h-5 bg-purple-600 rounded-full flex items-center justify-center">
+                        <div 
+                          className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center"
+                          style={{ background: themeColors.primaryGradient }}
+                        >
                           <span className="text-white text-xs">✓</span>
                         </div>
                       )}
@@ -214,7 +224,7 @@ export function PendaPassEditor({ user, isOpen, onClose }: PendaPassEditorProps)
             {/* Interests */}
             <div className="relative">
               <label className="block text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-2">
-                Interests
+                Interests {interests.length > 0 && <span className="text-zinc-400 font-normal">({interests.length}/10)</span>}
               </label>
               <div className="flex gap-2 mb-2 relative">
                 <div className="flex-1 relative">
@@ -233,7 +243,7 @@ export function PendaPassEditor({ user, isOpen, onClose }: PendaPassEditorProps)
                   {showSuggestions && interestSuggestions.length > 0 && (
                     <div
                       ref={suggestionsRef}
-                      className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto"
+                      className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto slim-scrollbar"
                     >
                       {interestSuggestions.map((suggestion, idx) => (
                         <button
@@ -259,10 +269,17 @@ export function PendaPassEditor({ user, isOpen, onClose }: PendaPassEditorProps)
                   onClick={() => addInterest()}
                   size="sm"
                   className="bg-purple-600 hover:bg-purple-700 text-white"
+                  disabled={interests.length >= 10}
+                  title={interests.length >= 10 ? 'Maximum of 10 interests reached' : 'Add interest'}
                 >
                   <Plus size={16} />
                 </Button>
               </div>
+              {interests.length >= 10 && (
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 mb-2">
+                  Maximum of 10 interests reached. Remove one to add another.
+                </p>
+              )}
               <div className="flex flex-wrap gap-2">
                 {interests.map((interest, idx) => (
                   <span

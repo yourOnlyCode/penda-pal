@@ -47,7 +47,8 @@ export function ProfileEditor({ user }: ProfileEditorProps) {
         return
       }
 
-      router.push('/dashboard')
+      // Redirect to PendaPass - will redirect to user's unique URL
+      router.push('/pendapass')
       router.refresh()
     } catch (error) {
       console.error('Profile update error:', error)
@@ -201,7 +202,7 @@ export function ProfileEditor({ user }: ProfileEditorProps) {
           type="button"
           variant="outline"
           size="lg"
-          onClick={() => router.push('/dashboard')}
+          onClick={() => router.push('/pendapass')}
         >
           Cancel
         </Button>

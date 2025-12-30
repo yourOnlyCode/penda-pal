@@ -8,41 +8,41 @@ datasource db {
 }
 
 model User {
-  id                String    @id @default(cuid())
-  email             String    @unique
-  name              String?
-  password          String?   // Hashed password for email/password auth
-  age               Int?
-  interests         String[]  // Highly considered in matching
-  bio               String?   // Blog-style about section
-  status            String?   // "What I'm doing right now"
-  country           String?
-  city              String?
-  coverImage        String?   // Backdrop photo for PendaPass
-  favoriteFoods     String[]  // Array of favorite foods
-  activities        String[]  // Array of favorite activities
-  placesVisited     String[]  // Places the user has been
-  placesWishlist    String[]  // Places the user wants to go
-  pendapassTheme    String?   @default("purple") // Color theme for PendaPass: purple, blue, green, pink, orange, teal
-  darkMode          String?   @default("system") // dark, light, or system
-  isMinor           Boolean   @default(false)
-  isVerified        Boolean   @default(false)
-  stripeCustomerId  String?
-  subscriptionId    String?
+  id                 String   @id @default(cuid())
+  email              String   @unique
+  name               String?
+  password           String? // Hashed password for email/password auth
+  age                Int?
+  interests          String[] // Highly considered in matching
+  bio                String? // Blog-style about section
+  status             String? // "What I'm doing right now"
+  country            String?
+  city               String?
+  coverImage         String? // Backdrop photo for PendaPass
+  favoriteFoods      String[] // Array of favorite foods
+  activities         String[] // Array of favorite activities
+  placesVisited      String[] // Places the user has been
+  placesWishlist     String[] // Places the user wants to go
+  pendapassTheme     String?  @default("purple") // Color theme for PendaPass: purple, blue, green, pink, orange, teal
+  darkMode           String?  @default("system") // dark, light, or system
+  isMinor            Boolean  @default(false)
+  isVerified         Boolean  @default(false)
+  stripeCustomerId   String?
+  subscriptionId     String?
   subscriptionStatus String?
-  image             String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  image              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
-  accounts          Account[]
-  sessions          Session[]
-  sentMessages      Message[] @relation("SentMessages")
-  penpalsAsUser1    Penpal[]     @relation("User1Penpals")
-  penpalsAsUser2    Penpal[]     @relation("User2Penpals")
-  waitlist          Waitlist?
-  reportsCreated    Report[]     @relation("Reporter")
-  reportsReceived   Report[]     @relation("Reported")
-  dailyStatuses     DailyStatus[]
+  accounts        Account[]
+  sessions        Session[]
+  sentMessages    Message[]     @relation("SentMessages")
+  penpalsAsUser1  Penpal[]      @relation("User1Penpals")
+  penpalsAsUser2  Penpal[]      @relation("User2Penpals")
+  waitlist        Waitlist?
+  reportsCreated  Report[]      @relation("Reporter")
+  reportsReceived Report[]      @relation("Reported")
+  dailyStatuses   DailyStatus[]
 }
 
 model Account {
@@ -81,16 +81,16 @@ model VerificationToken {
 }
 
 model Penpal {
-  id          String   @id @default(cuid())
-  user1Id     String
-  user2Id     String
-  status      String   @default("active")
-  startedAt   DateTime @default(now())
-  canCancelAt DateTime
-  cancelledBy String?
+  id           String   @id @default(cuid())
+  user1Id      String
+  user2Id      String
+  status       String   @default("active")
+  startedAt    DateTime @default(now())
+  canCancelAt  DateTime
+  cancelledBy  String?
   cancelReason String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   user1    User      @relation("User1Penpals", fields: [user1Id], references: [id])
   user2    User      @relation("User2Penpals", fields: [user2Id], references: [id])
@@ -128,13 +128,13 @@ model Waitlist {
 }
 
 model Report {
-  id           String   @id @default(cuid())
-  reporterId   String
-  reportedId   String
-  penpalId     String
-  reason       String
-  status       String   @default("pending")
-  createdAt    DateTime @default(now())
+  id         String   @id @default(cuid())
+  reporterId String
+  reportedId String
+  penpalId   String
+  reason     String
+  status     String   @default("pending")
+  createdAt  DateTime @default(now())
 
   reporter User   @relation("Reporter", fields: [reporterId], references: [id])
   reported User   @relation("Reported", fields: [reportedId], references: [id])
@@ -152,8 +152,8 @@ model DailyStatus {
   id        String   @id @default(cuid())
   userId    String
   content   String
-  mediaUrl  String?  // Photo or video URL
-  mediaType String?  // "image" or "video"
+  mediaUrl  String? // Photo or video URL
+  mediaType String? // "image" or "video"
   date      DateTime @default(now())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

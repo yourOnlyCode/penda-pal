@@ -21,7 +21,14 @@ export function ThemeProvider({
   initialTheme?: Theme
   initialResolvedTheme?: 'dark' | 'light'
 }) {
-  const [theme, setThemeState] = useState<Theme>(initialTheme)
+  // Load from localStorage on mount
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('theme') as Theme
+      return stored && ['dark', 'light', 'system'].includes(stored) ? stored : initialTheme
+    }
+    return initialTheme
+  })
   const [resolvedTheme, setResolvedTheme] = useState<'dark' | 'light'>(initialResolvedTheme)
 
   useEffect(() => {

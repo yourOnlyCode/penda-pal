@@ -117,8 +117,8 @@ export function EmailSignIn() {
             return
           }
 
-          // Redirect to dashboard
-          window.location.href = '/dashboard'
+          // Redirect to PendaPass - the /pendapass route will redirect to user's unique URL
+          window.location.href = '/pendapass'
         }
       }
     } catch (err: any) {

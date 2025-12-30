@@ -10,9 +10,9 @@ import { EmailSignIn } from '@/components/auth/EmailSignIn'
 export default async function SignInPage() {
   const session = await getServerSession(authOptions)
 
-  // If already signed in, redirect to dashboard
+  // If already signed in, redirect to PendaPass
   if (session) {
-    redirect('/dashboard')
+    redirect(`/pendapass/${session.user.id}`)
   }
 
   return (
