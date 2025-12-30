@@ -27,6 +27,7 @@ model User {
   darkMode           String?  @default("system") // dark, light, or system
   isMinor            Boolean  @default(false)
   isVerified         Boolean  @default(false)
+  highScore          Int?     @default(0) // PendaGame high score
   stripeCustomerId   String?
   subscriptionId     String?
   subscriptionStatus String?

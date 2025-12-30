@@ -8,8 +8,9 @@ import { Edit2, MapPin, Save, X, Camera, Video, Share2, ImageIcon, Upload, Penci
 import { useRouter } from 'next/navigation'
 import { ActivityCalendar } from './ActivityCalendar'
 import { PendaPassEditor } from './PendaPassEditor'
+import { PendaGame } from './PendaGame'
 import { getThemeColors, PendaPassTheme } from '@/lib/themes'
-import { CheckCircle2 } from 'lucide-react'
+import { CheckCircle2, Gamepad2 } from 'lucide-react'
 
 interface PendaPassProps {
   user: User & {
@@ -19,6 +20,7 @@ interface PendaPassProps {
     placesVisited?: string[]
     placesWishlist?: string[]
     pendapassTheme?: string | null
+    highScore?: number | null
   }
   isOwnProfile?: boolean
   activePenpalId?: string
@@ -29,6 +31,7 @@ export function PendaPass({ user, isOwnProfile = false, activePenpalId }: PendaP
   const [isEditMode, setIsEditMode] = useState(false)
   const [isEditorOpen, setIsEditorOpen] = useState(false)
   const [isFlipped, setIsFlipped] = useState(false)
+  const [isGameMode, setIsGameMode] = useState(false)
   const [isEditingImages, setIsEditingImages] = useState(false)
   const [dailyStatus, setDailyStatus] = useState('')
   const [mediaPreview, setMediaPreview] = useState<string | null>(null)
@@ -44,6 +47,45 @@ export function PendaPass({ user, isOwnProfile = false, activePenpalId }: PendaP
   // Get theme colors
   const theme = (user.pendapassTheme as PendaPassTheme) || 'purple'
   const themeColors = getThemeColors(theme)
+
+  // Handle Game Over
+  const handleGameOver = async (score: number) => {
+    try {
+      await fetch('/api/user/highscore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ score }),
+      })
+      router.refresh()
+    } catch (error) {
+      console.error('Failed to save score:', error)
+    }
+  }
+
+  // Handle Game Mode Toggle
+  const toggleGameMode = () => {
+    if (!isGameMode) {
+      setIsGameMode(true)
+      setIsFlipped(true)
+    } else {
+      setIsGameMode(false)
+      setIsFlipped(false)
+    }
+  }
+
+  // Ensure flip back goes to main view
+  const handleFlip = () => {
+    if (isFlipped) {
+      // Flipping back to front
+      setIsFlipped(false)
+      // Delay disabling game mode until flip is done (optional, but simpler to just set false immediately or keep true?
+      // If we flip back, we want to see the front. 
+      // If we are in game mode, we probably want to exit game mode when flipping back.
+      setTimeout(() => setIsGameMode(false), 300) 
+    } else {
+      setIsFlipped(true)
+    }
+  }
 
   // Get theme color filter for pandas
   const getThemeFilter = (themeName: PendaPassTheme): string => {
@@ -239,6 +281,18 @@ export function PendaPass({ user, isOwnProfile = false, activePenpalId }: PendaP
             <span className="text-white font-bold tracking-widest text-lg">PENDAPASS</span>
             <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
           </div>
+          
+          {/* Top Center Game Button */}
+          {isOwnProfile && (
+            <button
+              onClick={toggleGameMode}
+              className="absolute left-1/2 -translate-x-1/2 p-2 rounded-full bg-white/20 text-white hover:bg-white/30 transition-all hover:scale-110 active:scale-95"
+              title="Play Penda Game"
+            >
+              <Gamepad2 size={20} />
+            </button>
+          )}
+
           <div className="flex items-center gap-3">
             
             <div className="text-white/60 text-xs font-mono tracking-widest">
@@ -690,7 +744,7 @@ export function PendaPass({ user, isOwnProfile = false, activePenpalId }: PendaP
           )}
         </div>
 
-          {/* Back Side - Destination Stamps */}
+          {/* Back Side - Destination Stamps OR Game */}
           <div
             className="absolute inset-0 bg-white dark:bg-zinc-900 rounded-3xl overflow-hidden shadow-2xl border-4 border-white/20 dark:border-white/5 shadow-purple-900/20 dark:shadow-black/50 flex flex-col"
             style={{
@@ -698,124 +752,134 @@ export function PendaPass({ user, isOwnProfile = false, activePenpalId }: PendaP
               transform: 'rotateY(180deg)',
             }}
           >
+            {isGameMode ? (
+              <PendaGame 
+                onGameOver={handleGameOver} 
+                currentHighScore={user.highScore || 0}
+                onExit={() => {
+                  setIsGameMode(false)
+                  setIsFlipped(false)
+                }}
+              />
+            ) : (
+              <>
                 {/* Header */}
                 <div 
                   className="absolute top-0 left-0 w-full h-16 z-10 opacity-90 flex items-center px-6 justify-between"
                   style={{ background: themeColors.primaryGradient }}
                 >
-              <div className="flex items-center gap-2">
-                <span className="text-white font-bold tracking-widest text-lg">TRAVEL STAMPS</span>
-                <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
-              </div>
-              <div className="text-white/60 text-xs font-mono tracking-widest">
-                {user.id.slice(-8).toUpperCase()}
-              </div>
-            </div>
-
-            {/* Content - Scrollable */}
-            <div className="flex-1 pt-16 pb-16 overflow-y-auto scrollbar-hide">
-              <div className="px-6 pb-4">
-                {/* Places Visited - Stamps */}
-                <div className="mb-6">
-                  <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-4 flex items-center gap-2">
-                    <span className="text-2xl">✈️</span>
-                    Places I've Been
-                  </h3>
-                  <div className="grid grid-cols-3 gap-3">
-                    {((user as any).placesVisited || []).map((place: string, idx: number) => (
-                      <div
-                        key={idx}
-                        className="relative aspect-square bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/40 dark:to-green-800/40 rounded-lg border-2 border-green-300 dark:border-green-700 p-2 flex flex-col items-center justify-center text-center shadow-md"
-                      >
-                        <div className="text-2xl mb-1">📍</div>
-                        <div className="text-xs font-bold text-green-800 dark:text-green-200 leading-tight">
-                          {place}
-                        </div>
-                        <div className="absolute top-1 right-1 text-green-600 dark:text-green-400 text-xs">✓</div>
-                      </div>
-                    ))}
-                    {/* Empty slots for visited places */}
-                    {[...Array(Math.max(0, 6 - ((user as any).placesVisited || []).length))].map((_, idx) => (
-                      <div
-                        key={`empty-visited-${idx}`}
-                        className="aspect-square bg-zinc-100 dark:bg-zinc-800 rounded-lg border-2 border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center"
-                      >
-                        <span className="text-zinc-400 text-2xl">+</span>
-                      </div>
-                    ))}
+                  <div className="flex items-center gap-2">
+                    <span className="text-white font-bold tracking-widest text-lg">TRAVEL STAMPS</span>
+                    <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+                  </div>
+                  <div className="text-white/60 text-xs font-mono tracking-widest">
+                    {user.id.slice(-8).toUpperCase()}
                   </div>
                 </div>
 
-                {/* Places Wishlist - Empty Blocks */}
-                <div>
-                  <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-4 flex items-center gap-2">
-                    <span className="text-2xl">🎯</span>
-                    Places I Want to Go
-                  </h3>
-                  <div className="grid grid-cols-3 gap-3">
-                    {((user as any).placesWishlist || []).map((place: string, idx: number) => (
-                      <div
-                        key={idx}
-                        className="relative aspect-square bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/40 rounded-lg border-2 border-blue-300 dark:border-blue-700 p-2 flex flex-col items-center justify-center text-center shadow-md"
-                      >
-                        <div className="text-2xl mb-1">🗺️</div>
-                        <div className="text-xs font-bold text-blue-800 dark:text-blue-200 leading-tight">
-                          {place}
-                        </div>
+                {/* Content - Scrollable */}
+                <div className="flex-1 pt-16 pb-16 overflow-y-auto scrollbar-hide">
+                  <div className="px-6 pb-4">
+                    {/* Places Visited - Stamps */}
+                    <div className="mb-6">
+                      <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-4 flex items-center gap-2">
+                        <span className="text-2xl">✈️</span>
+                        Places I've Been
+                      </h3>
+                      <div className="grid grid-cols-3 gap-3">
+                        {((user as any).placesVisited || []).map((place: string, idx: number) => (
+                          <div
+                            key={idx}
+                            className="relative aspect-square bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/40 dark:to-green-800/40 rounded-lg border-2 border-green-300 dark:border-green-700 p-2 flex flex-col items-center justify-center text-center shadow-md"
+                          >
+                            <div className="text-2xl mb-1">📍</div>
+                            <div className="text-xs font-bold text-green-800 dark:text-green-200 leading-tight">
+                              {place}
+                            </div>
+                            <div className="absolute top-1 right-1 text-green-600 dark:text-green-400 text-xs">✓</div>
+                          </div>
+                        ))}
+                        {/* Empty slots for visited places */}
+                        {[...Array(Math.max(0, 6 - ((user as any).placesVisited || []).length))].map((_, idx) => (
+                          <div
+                            key={`empty-visited-${idx}`}
+                            className="aspect-square bg-zinc-100 dark:bg-zinc-800 rounded-lg border-2 border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center"
+                          >
+                            <span className="text-zinc-400 text-2xl">+</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                    {/* Empty slots for wishlist */}
-                    {[...Array(Math.max(0, 6 - ((user as any).placesWishlist || []).length))].map((_, idx) => (
-                      <div
-                        key={`empty-wishlist-${idx}`}
-                        className="aspect-square bg-zinc-100 dark:bg-zinc-800 rounded-lg border-2 border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center"
-                      >
-                        <span className="text-zinc-400 text-2xl">+</span>
+                    </div>
+
+                    {/* Places Wishlist - Empty Blocks */}
+                    <div>
+                      <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 mb-4 flex items-center gap-2">
+                        <span className="text-2xl">🎯</span>
+                        Places I Want to Go
+                      </h3>
+                      <div className="grid grid-cols-3 gap-3">
+                        {((user as any).placesWishlist || []).map((place: string, idx: number) => (
+                          <div
+                            key={idx}
+                            className="relative aspect-square bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-800/40 rounded-lg border-2 border-blue-300 dark:border-blue-700 p-2 flex flex-col items-center justify-center text-center shadow-md"
+                          >
+                            <div className="text-2xl mb-1">🗺️</div>
+                            <div className="text-xs font-bold text-blue-800 dark:text-blue-200 leading-tight">
+                              {place}
+                            </div>
+                          </div>
+                        ))}
+                        {/* Empty slots for wishlist */}
+                        {[...Array(Math.max(0, 6 - ((user as any).placesWishlist || []).length))].map((_, idx) => (
+                          <div
+                            key={`empty-wishlist-${idx}`}
+                            className="aspect-square bg-zinc-100 dark:bg-zinc-800 rounded-lg border-2 border-dashed border-zinc-300 dark:border-zinc-700 flex items-center justify-center"
+                          >
+                            <span className="text-zinc-400 text-2xl">+</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Verification Status - Back Side (Fixed at bottom) */}
-            <div className="absolute bottom-0 left-0 right-0 px-6 py-2 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 z-10">
-              <div className="flex items-center justify-between">
-                {!user.isVerified && (
-                  <div className="text-xs text-zinc-400 dark:text-zinc-500 font-light tracking-wide">
-                    UNVERIFIED
+                {/* Verification Status - Back Side (Fixed at bottom) */}
+                <div className="absolute bottom-0 left-0 right-0 px-6 py-2 bg-white dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 z-10">
+                  <div className="flex items-center justify-between">
+                    {!user.isVerified && (
+                      <div className="text-xs text-zinc-400 dark:text-zinc-500 font-light tracking-wide">
+                        UNVERIFIED
+                      </div>
+                    )}
+                    {user.isVerified && (
+                      <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400 font-medium">
+                        <CheckCircle2 size={14} />
+                        <span>VERIFIED</span>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
+
+                {/* Verified Watermark - Panda Head - Back Side */}
                 {user.isVerified && (
-                  <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400 font-medium">
-                    <CheckCircle2 size={14} />
-                    <span>VERIFIED</span>
+                  <div className="absolute bottom-6 left-6 z-0 pointer-events-none">
+                    <div className="relative w-24 h-24 opacity-[0.08] dark:opacity-[0.12]">
+                      <Image
+                        src="/panda-icon.png"
+                        alt="Verified watermark"
+                        fill
+                        className="object-contain grayscale"
+                      />
+                    </div>
                   </div>
                 )}
-              </div>
-            </div>
-
-            {/* Verified Watermark - Panda Head - Back Side */}
-            {user.isVerified && (
-              <div className="absolute bottom-6 left-6 z-0 pointer-events-none">
-                <div className="relative w-24 h-24 opacity-[0.08] dark:opacity-[0.12]">
-                  <Image
-                    src="/panda-icon.png"
-                    alt="Verified watermark"
-                    fill
-                    className="object-contain"
-                    style={{
-                      filter: 'brightness(0) saturate(100%)',
-                    }}
-                  />
-                </div>
-              </div>
+              </>
             )}
 
-            {/* Flip Button - Triangular Corner */}
-            {isOwnProfile && (
+            {/* Flip Button - Triangular Corner - Only show when not in game mode */}
+            {isOwnProfile && !isGameMode && (
               <button
-                onClick={() => setIsFlipped(!isFlipped)}
+                onClick={handleFlip}
                 className="absolute bottom-0 right-0 w-16 h-16 text-white shadow-lg transition-all hover:scale-110 active:scale-95 z-20 hover:opacity-90"
                 style={{
                   clipPath: 'polygon(100% 0, 100% 100%, 0 100%)',
