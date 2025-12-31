@@ -287,13 +287,14 @@ export function PendaGame({ onGameOver, currentHighScore, onExit }: PendaGamePro
         const currentWidth = render.canvas.width
         x = Math.max(clampSize + 10, Math.min(x, currentWidth - clampSize - 10))
 
+        const triangleVertices: Matter.Vector[][] = [[
+          { x: 0, y: -triangleSize },
+          { x: triangleSize * 0.866, y: triangleSize * 0.5 }, // cos(60) = 0.866, sin(60) = 0.5
+          { x: -triangleSize * 0.866, y: triangleSize * 0.5 }
+        ]]
         body = Bodies.fromVertices(
           x, 50,
-          [
-            { x: 0, y: -triangleSize },
-            { x: triangleSize * 0.866, y: triangleSize * 0.5 }, // cos(60) = 0.866, sin(60) = 0.5
-            { x: -triangleSize * 0.866, y: triangleSize * 0.5 }
-          ],
+          triangleVertices,
           {
             restitution: 0.5,
             friction: 0.3,
@@ -375,6 +376,10 @@ export function PendaGame({ onGameOver, currentHighScore, onExit }: PendaGamePro
       }
       element.addEventListener('mouseleave', handleMouseLeave)
 
+    // --- GAME OVER TRACKING ---
+    // Track bodies that are touching the game over line and how long they've been there
+    const bodiesTouchingLine = new Map<number, number>() // body.id -> timestamp when it started touching
+
     // --- COLLISION MERGING ---
     Events.on(engine, 'collisionStart', (event) => {
       const pairs = event.pairs
@@ -385,6 +390,19 @@ export function PendaGame({ onGameOver, currentHighScore, onExit }: PendaGamePro
         const bodyA = pairs[i].bodyA
         const bodyB = pairs[i].bodyB
 
+        // Game over line collision tracking
+        if (bodyA.label === 'game-over-line' || bodyB.label === 'game-over-line') {
+          const otherBody = bodyA.label === 'game-over-line' ? bodyB : bodyA
+          
+          // Only track animals and triangles (not eaters, walls, or ground)
+          if (otherBody.label.startsWith('animal-') || otherBody.label === 'obstacle-triangle') {
+            // Record when this body started touching the line
+            if (!bodiesTouchingLine.has(otherBody.id)) {
+              bodiesTouchingLine.set(otherBody.id, Date.now())
+            }
+          }
+        }
+
         // Eater collision - destroy any animal it touches
         if (bodyA.label === 'eater' || bodyB.label === 'eater') {
           const eater = bodyA.label === 'eater' ? bodyA : bodyB
@@ -394,6 +412,8 @@ export function PendaGame({ onGameOver, currentHighScore, onExit }: PendaGamePro
           if (other.label.startsWith('animal-')) {
             Composite.remove(engine.world, other)
             processedBodies.add(other)
+            // Also remove from game over tracking if it was being tracked
+            bodiesTouchingLine.delete(other.id)
             continue
           }
         }
@@ -500,6 +520,21 @@ export function PendaGame({ onGameOver, currentHighScore, onExit }: PendaGamePro
       }
     })
 
+    // Track when bodies stop colliding with the game over line
+    Events.on(engine, 'collisionEnd', (event) => {
+      const pairs = event.pairs
+      for (const pair of pairs) {
+        const bodyA = pair.bodyA
+        const bodyB = pair.bodyB
+        
+        if (bodyA.label === 'game-over-line' || bodyB.label === 'game-over-line') {
+          const otherBody = bodyA.label === 'game-over-line' ? bodyB : bodyA
+          // Remove from tracking when collision ends
+          bodiesTouchingLine.delete(otherBody.id)
+        }
+      }
+    })
+
     // --- EATER UPDATE ---
     // Keep eater falling straight down and remove it when it goes off screen
     const updateEater = () => {
@@ -518,26 +553,23 @@ export function PendaGame({ onGameOver, currentHighScore, onExit }: PendaGamePro
     }
 
     // --- GAME OVER CHECK ---
-    // Check if any body is above the line for too long
-    // Ideally use 'collisionActive' with a sensor line, or just check positions
-    // Simple check: every second, check if any STATIC/SLEEPING body is above y=100
-    // Actually, just checking if velocity is low and y < 100
+    // Check if any body has been touching the line for 3+ seconds
     const checkGameOver = () => {
-      const bodies = Composite.allBodies(engine.world)
-      // Filter out walls/ground
-      const animals = bodies.filter(b => b.label.startsWith('animal-'))
+      if (isGameOver) return
       
-      for (const animal of animals) {
-        if (animal.position.y < 100 && Math.abs(animal.velocity.y) < 0.1 && Math.abs(animal.velocity.x) < 0.1) {
-          // It's stacked high and stable-ish
-          // Give a grace period? For simplicity, immediate game over if stable high
-          // But usually there's a timer.
-          // Let's rely on a simplified "top line" trigger
+      const now = Date.now()
+      const GAME_OVER_DELAY = 3000 // 3 seconds in milliseconds
+      
+      for (const [bodyId, touchStartTime] of bodiesTouchingLine.entries()) {
+        const timeTouching = now - touchStartTime
+        
+        if (timeTouching >= GAME_OVER_DELAY) {
+          // This body has been touching the line for 3+ seconds
           setIsGameOver(true)
           Runner.stop(runner)
           // onGameOver(score) // Don't call here directly to avoid closure stale state issues if using score from state
           // We'll handle score saving in a useEffect dependent on isGameOver
-          break
+          return
         }
       }
     }
