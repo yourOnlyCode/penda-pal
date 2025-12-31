@@ -1,11 +1,10 @@
 import { getServerSession } from 'next-auth'
 import { redirect, notFound } from 'next/navigation'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
-import { PendaPass } from '@/components/dashboard/PendaPass'
-import { FloatingDock } from '@/components/dashboard/FloatingDock'
-import { DarkModeToggle } from '@/components/dashboard/DarkModeToggle'
+import { TopRightControls } from '@/components/dashboard/TopRightControls'
 import { prisma } from '@/lib/prisma'
 import { Sparkles } from 'lucide-react'
+import PendaPassClient from './PendaPassClient'
 
 interface PendaPassPageProps {
   params: {
@@ -26,7 +25,21 @@ export default async function PendaPassIdPage({ params }: PendaPassPageProps) {
   // Get the user whose PendaPass we're viewing
   const viewedUser = await prisma.user.findUnique({
     where: { id: params.id },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+      coverImage: true,
+      city: true,
+      country: true,
+      placesVisited: true,
+      placesWishlist: true,
+      pendapassTheme: true,
+      highScore: true,
+      pendaCoins: true,
+      isVerified: true,
+      createdAt: true,
       penpalsAsUser1: {
         where: { status: 'active' },
         include: {
@@ -70,19 +83,15 @@ export default async function PendaPassIdPage({ params }: PendaPassPageProps) {
 
   return (
     <div className="min-h-screen bg-zinc-100 dark:bg-black relative overflow-hidden flex flex-col items-center justify-center py-20 pb-32">
-      {/* Dark Mode Toggle - Fixed Top Right */}
-      <div className="fixed top-4 right-4 z-50">
-        <DarkModeToggle />
-      </div>
+      {/* Top Right Controls - Dark Mode Toggle and Sign Out */}
+      <TopRightControls />
       
       {/* Disclaimer Banner - Fixed Overlay */}
-      <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-4">
-        <div className="inline-flex items-center gap-2 rounded-full border bg-white/80 px-4 py-2 text-sm backdrop-blur-sm dark:bg-gray-900/80 shadow-lg">
+      <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50">
+        <div className="inline-flex items-center gap-3 rounded-full border bg-white/80 px-4 py-2 text-sm backdrop-blur-sm dark:bg-gray-900/80 shadow-lg">
           <Sparkles className="h-4 w-4 text-purple-600" />
           <span className="font-medium">Matching Pendapals when we reach 1,000 users!</span>
-        </div>
-        <div className="mt-2 text-center">
-          <span className="inline-block px-3 py-1 rounded-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm text-sm text-muted-foreground shadow-sm">
+          <span className="px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 font-semibold text-sm">
             {userCount}/1,000
           </span>
         </div>
@@ -97,21 +106,14 @@ export default async function PendaPassIdPage({ params }: PendaPassPageProps) {
       <div className="container mx-auto px-4 z-10 flex flex-col items-center gap-8">
         {/* PendaPass Profile Card */}
         <div className="w-full flex justify-center">
-          <PendaPass 
-            user={viewedUser} 
+          <PendaPassClient 
+            viewedUser={viewedUser} 
             isOwnProfile={isOwnProfile} 
-            activePenpalId={activePenpal?.id} 
+            activePenpal={activePenpal} 
+            penpalUser={penpalUser}
+            activePenpalId={activePenpal?.id}
           />
         </div>
-
-        {/* Floating Dock for Mailbox/Request - Only show for own profile */}
-        {isOwnProfile && (
-          <FloatingDock 
-            user={viewedUser} 
-            activePenpal={activePenpal} 
-            penpalUser={penpalUser} 
-          />
-        )}
       </div>
     </div>
   )

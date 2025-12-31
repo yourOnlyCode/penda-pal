@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { prisma } from '@/lib/prisma'
+import { awardPendaCoins } from '@/lib/pendaCoins'
 
 export async function GET(req: Request) {
   try {
@@ -57,6 +58,16 @@ export async function POST(req: Request) {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
+    // Check if status already exists for today
+    const existingStatus = await prisma.dailyStatus.findUnique({
+      where: {
+        userId_date: {
+          userId: session.user.id,
+          date: today,
+        },
+      },
+    })
+
     // Upsert: update if exists for today, create if not
     const status = await prisma.dailyStatus.upsert({
       where: {
@@ -79,7 +90,14 @@ export async function POST(req: Request) {
       },
     })
 
-    return NextResponse.json({ status })
+    // Award coins if this is a new status (not an update)
+    let coinsAwarded = 0
+    if (!existingStatus) {
+      coinsAwarded = 5 // Award 5 coins for updating status
+      await awardPendaCoins(session.user.id, coinsAwarded, 'Status update')
+    }
+
+    return NextResponse.json({ status, coinsAwarded })
   } catch (error: any) {
     console.error('Create daily status error:', error)
     return NextResponse.json(

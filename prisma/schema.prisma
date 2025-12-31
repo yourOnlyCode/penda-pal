@@ -28,6 +28,7 @@ model User {
   isMinor            Boolean  @default(false)
   isVerified         Boolean  @default(false)
   highScore          Int?     @default(0) // PendaGame high score
+  pendaCoins         Int      @default(0) // Penda Coin currency
   stripeCustomerId   String?
   subscriptionId     String?
   subscriptionStatus String?
@@ -44,6 +45,10 @@ model User {
   reportsCreated  Report[]      @relation("Reporter")
   reportsReceived Report[]      @relation("Reported")
   dailyStatuses   DailyStatus[]
+  ownedLots       Lot[]         @relation("LotOwner")
+  sentNotes       NeighborNote[] @relation("SentNotes")
+  receivedNotes   NeighborNote[] @relation("ReceivedNotes")
+  rapport          Rapport[]
 }
 
 model Account {
@@ -163,4 +168,81 @@ model DailyStatus {
 
   @@unique([userId, date]) // One status per user per day
   @@index([userId, date])
+}
+
+model Lot {
+  id            String   @id @default(cuid())
+  villageId     String
+  villageName   String   // Village name for address uniqueness
+  gridX         Int
+  gridZ         Int
+  address       String   @unique // Globally unique address like "123 Main St, Panda Village"
+  cost          Int      // Cost in penda coins
+  isRoad        Boolean  @default(false) // Roads cannot be built on
+  isPathway     Boolean  @default(false) // Pathways cannot be built on
+  isPark        Boolean  @default(false) // Parks cannot be built on
+  isApartmentZone Boolean @default(false) // Can build vertically up to 4 floors
+  ownerId       String?
+  houseType     String?  // "basic", "mansion", "business"
+  floorCount    Int      @default(1) // For apartment zones, 1-4
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  owner User? @relation("LotOwner", fields: [ownerId], references: [id])
+
+  @@unique([villageId, gridX, gridZ])
+  @@index([villageId])
+  @@index([ownerId])
+  @@index([address])
+}
+
+model NeighborNote {
+  id            String   @id @default(cuid())
+  senderId      String
+  receiverId    String
+  villageId     String
+  villageName   String
+  message       String?  // Optional message
+  present       String?  // Optional gifted item (e.g., "flower", "cookie")
+  pendaCoins    Int      @default(0) // Penda coins gifted (0 if none)
+  date          DateTime @default(now()) // Date the note was sent
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sender   User @relation("SentNotes", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("ReceivedNotes", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([senderId, receiverId, date]) // One note per sender-receiver pair per day
+  @@index([villageId])
+  @@index([receiverId, date])
+  @@index([senderId, date])
+}
+
+model Rapport {
+  id          String   @id @default(cuid())
+  userId      String
+  villageId   String
+  villageName String
+  score       Int      @default(0) // Reputation score in this village
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, villageId]) // One rapport record per user per village
+  @@index([villageId, score])
+  @@index([userId])
+}
+
+model ScavengeSpot {
+  id          String   @id @default(cuid())
+  date        DateTime @default(now()) // Date for which this spot is active
+  positionX   Float    // 3D position on planet
+  positionY   Float
+  positionZ   Float
+  emoji       String   @default("🔍") // Emoji marker
+  createdAt   DateTime @default(now())
+
+  @@unique([date, positionX, positionY, positionZ]) // One spot per position per day
+  @@index([date])
 }

@@ -47,9 +47,12 @@ export function PendaGame({ onGameOver, currentHighScore, onExit }: PendaGamePro
   const [chargeStartTime, setChargeStartTime] = useState(0)
   const [chargePosition, setChargePosition] = useState({ x: 0, y: 0 })
   const chargeIntervalRef = useRef<NodeJS.Timeout | null>(null)
-  const [nextShapeType, setNextShapeType] = useState<'circle' | 'triangle'>('circle') // Next shape to drop
+  const [nextShapeType, setNextShapeType] = useState<'circle' | 'triangle' | 'eater'>('circle') // Next shape to drop
   const isChargingRef = useRef(false) // Ref to track charging state for event handlers
   const currentChargeRef = useRef(0) // Ref to track current charge value
+  const [mouseX, setMouseX] = useState(0) // Mouse X position for shape preview
+  const mouseXRef = useRef(0) // Ref for immediate updates without re-renders
+  const rafRef = useRef<number | null>(null) // Ref for requestAnimationFrame
 
   // Get container width on mount and resize
   useEffect(() => {
@@ -59,6 +62,7 @@ export function PendaGame({ onGameOver, currentHighScore, onExit }: PendaGamePro
       if (sceneRef.current) {
         const width = sceneRef.current.offsetWidth
         setGameWidth(width)
+        setMouseX(width / 2) // Initialize to center
       }
     }
 
@@ -116,15 +120,26 @@ export function PendaGame({ onGameOver, currentHighScore, onExit }: PendaGamePro
       render: { fillStyle: '#ddd' }
     })
 
-    Composite.add(engine.world, [ground, leftWall, rightWall])
+    // Create sensor line at y=50 (red dotted line) to detect game over collisions
+    const gameOverLine = Bodies.rectangle(gameWidth / 2, 50, gameWidth, 2, {
+      isSensor: true, // Sensor doesn't physically interact, just detects collisions
+      isStatic: true,
+      label: 'game-over-line',
+      render: { visible: false } // Invisible sensor
+    })
+
+    Composite.add(engine.world, [ground, leftWall, rightWall, gameOverLine])
 
     // --- GAME LOGIC ---
     let currentNextIndex = Math.floor(Math.random() * 3) // Start with smaller ones
     setNextAnimalIndex(currentNextIndex)
     
-    // Determine next shape type (5% chance for triangle)
-    const getNextShapeType = (): 'circle' | 'triangle' => {
-      return Math.random() < 0.05 ? 'triangle' : 'circle'
+    // Determine next shape type (1% chance for eater, 5% chance for triangle)
+    const getNextShapeType = (): 'circle' | 'triangle' | 'eater' => {
+      const rand = Math.random()
+      if (rand < 0.01) return 'eater'
+      if (rand < 0.06) return 'triangle'
+      return 'circle'
     }
     let currentNextShapeType = getNextShapeType()
     setNextShapeType(currentNextShapeType)
@@ -133,6 +148,39 @@ export function PendaGame({ onGameOver, currentHighScore, onExit }: PendaGamePro
     let currentCharge = 0
     let chargeStart = 0
     let chargeX = 0
+
+    // Mouse move handler for shape preview - optimized with requestAnimationFrame
+    const handleMouseMove = (e: MouseEvent | TouchEvent) => {
+      if (isGameOver) return
+      
+      const clientX = 'touches' in e ? e.touches[0]?.clientX : (e as MouseEvent).clientX
+      if (clientX === undefined) return
+      
+      const rect = render.canvas.getBoundingClientRect()
+      const mouseXRelative = clientX - rect.left
+      
+      // Constrain to canvas bounds
+      let radius: number
+      if (nextShapeType === 'eater') {
+        radius = 20 // Half of eater size (40/2)
+      } else if (nextShapeType === 'circle') {
+        radius = ANIMAL_TYPES[nextAnimalIndex].radius
+      } else {
+        radius = 50 * CIRCLE_SCALE
+      }
+      const constrainedX = Math.max(radius, Math.min(mouseXRelative, gameWidth - radius))
+      
+      // Update ref immediately for smooth tracking
+      mouseXRef.current = constrainedX
+      
+      // Batch state updates with requestAnimationFrame for better performance
+      if (rafRef.current === null) {
+        rafRef.current = requestAnimationFrame(() => {
+          setMouseX(mouseXRef.current)
+          rafRef.current = null
+        })
+      }
+    }
 
     // Charge start handler
     const handleChargeStart = (e: MouseEvent | TouchEvent) => {
@@ -144,6 +192,19 @@ export function PendaGame({ onGameOver, currentHighScore, onExit }: PendaGamePro
       const clientY = 'touches' in e ? e.touches[0].clientY : (e as MouseEvent).clientY
       
       chargeX = clientX - rect.left
+      
+      // Update mouse position for shape preview
+      let radius: number
+      if (nextShapeType === 'eater') {
+        radius = 20 // Half of eater size (40/2)
+      } else if (nextShapeType === 'circle') {
+        radius = ANIMAL_TYPES[nextAnimalIndex].radius
+      } else {
+        radius = 50 * CIRCLE_SCALE
+      }
+      const constrainedX = Math.max(radius, Math.min(chargeX, gameWidth - radius))
+      setMouseX(constrainedX)
+      
       chargeStart = Date.now()
       currentCharge = 0
       currentChargeRef.current = 0
@@ -197,7 +258,29 @@ export function PendaGame({ onGameOver, currentHighScore, onExit }: PendaGamePro
 
       let body: Matter.Body
 
-      if (currentNextShapeType === 'triangle') {
+      if (currentNextShapeType === 'eater') {
+        // Create eater - a block that falls straight down and destroys circles
+        const eaterSize = 40
+        const currentWidth = render.canvas.width
+        x = Math.max(eaterSize / 2 + 10, Math.min(x, currentWidth - eaterSize / 2 - 10))
+
+        body = Bodies.rectangle(x, 50, eaterSize, eaterSize, {
+          isSensor: true, // Pass through walls and ground
+          isStatic: false,
+          render: { 
+            fillStyle: '#ff0000', 
+            strokeStyle: '#cc0000', 
+            lineWidth: 2 
+          },
+          label: 'eater' // Special label for eater
+        })
+        
+        // Eater falls straight down with constant velocity (no curve, no charge effect)
+        Body.setVelocity(body, { 
+          x: 0, // No horizontal movement
+          y: 8 // Constant downward velocity
+        })
+      } else if (currentNextShapeType === 'triangle') {
         // Create triangle
         const triangleSize = 50 * CIRCLE_SCALE
         const clampSize = triangleSize * 0.866 // Approximate radius for clamping
@@ -237,11 +320,13 @@ export function PendaGame({ onGameOver, currentHighScore, onExit }: PendaGamePro
         })
       }
 
-      // Add initial velocity based on charge and curve
-      Body.setVelocity(body, { 
-        x: curveStrength, 
-        y: launchVelocity 
-      })
+      // Add initial velocity based on charge and curve (only for non-eater shapes)
+      if (currentNextShapeType !== 'eater') {
+        Body.setVelocity(body, { 
+          x: curveStrength, 
+          y: launchVelocity 
+        })
+      }
 
       Composite.add(engine.world, body)
 
@@ -265,6 +350,10 @@ export function PendaGame({ onGameOver, currentHighScore, onExit }: PendaGamePro
 
     // Attach event listeners
     const element = sceneRef.current
+    // Add mouse move tracking for shape preview
+    element.addEventListener('mousemove', handleMouseMove)
+    element.addEventListener('touchmove', handleMouseMove)
+    
     element.addEventListener('mousedown', handleChargeStart)
     element.addEventListener('mouseup', handleChargeRelease)
     element.addEventListener('touchstart', handleChargeStart)
@@ -295,6 +384,19 @@ export function PendaGame({ onGameOver, currentHighScore, onExit }: PendaGamePro
       for (let i = 0; i < pairs.length; i++) {
         const bodyA = pairs[i].bodyA
         const bodyB = pairs[i].bodyB
+
+        // Eater collision - destroy any animal it touches
+        if (bodyA.label === 'eater' || bodyB.label === 'eater') {
+          const eater = bodyA.label === 'eater' ? bodyA : bodyB
+          const other = bodyA.label === 'eater' ? bodyB : bodyA
+          
+          // Destroy any animal circles the eater touches
+          if (other.label.startsWith('animal-')) {
+            Composite.remove(engine.world, other)
+            processedBodies.add(other)
+            continue
+          }
+        }
 
         // Skip if already processed
         if (processedBodies.has(bodyA) || processedBodies.has(bodyB)) {
@@ -398,6 +500,23 @@ export function PendaGame({ onGameOver, currentHighScore, onExit }: PendaGamePro
       }
     })
 
+    // --- EATER UPDATE ---
+    // Keep eater falling straight down and remove it when it goes off screen
+    const updateEater = () => {
+      const bodies = Composite.allBodies(engine.world)
+      const eaters = bodies.filter(b => b.label === 'eater')
+      
+      for (const eater of eaters) {
+        // Keep falling straight down
+        Body.setVelocity(eater, { x: 0, y: 8 })
+        
+        // Remove if it goes below the canvas
+        if (eater.position.y > GAME_HEIGHT + 100) {
+          Composite.remove(engine.world, eater)
+        }
+      }
+    }
+
     // --- GAME OVER CHECK ---
     // Check if any body is above the line for too long
     // Ideally use 'collisionActive' with a sensor line, or just check positions
@@ -423,7 +542,10 @@ export function PendaGame({ onGameOver, currentHighScore, onExit }: PendaGamePro
       }
     }
 
-    const interval = setInterval(checkGameOver, 1000)
+    const interval = setInterval(() => {
+      updateEater()
+      checkGameOver()
+    }, 16) // Update every frame (~60fps) for smooth eater movement
 
     // Run
     Render.run(render)
@@ -441,6 +563,8 @@ export function PendaGame({ onGameOver, currentHighScore, onExit }: PendaGamePro
       Render.stop(render)
       Runner.stop(runner)
       if (render.canvas) render.canvas.remove()
+      element.removeEventListener('mousemove', handleMouseMove)
+      element.removeEventListener('touchmove', handleMouseMove)
       element.removeEventListener('mousedown', handleChargeStart)
       element.removeEventListener('mouseup', handleChargeRelease)
       element.removeEventListener('mouseleave', handleMouseLeave)
@@ -449,6 +573,10 @@ export function PendaGame({ onGameOver, currentHighScore, onExit }: PendaGamePro
       clearInterval(interval)
       if (chargeIntervalRef.current) {
         clearTimeout(chargeIntervalRef.current)
+      }
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current)
+        rafRef.current = null
       }
     }
   }, [gameWidth, gameKey]) // Re-run when width changes or game restarts
@@ -485,6 +613,7 @@ export function PendaGame({ onGameOver, currentHighScore, onExit }: PendaGamePro
     setScore(0)
     setCharge(0)
     setIsCharging(false)
+    setMouseX(gameWidth / 2) // Reset to center
     isChargingRef.current = false
     currentChargeRef.current = 0
     if (chargeIntervalRef.current) {
@@ -522,24 +651,30 @@ export function PendaGame({ onGameOver, currentHighScore, onExit }: PendaGamePro
 
       {/* Game Area */}
       <div className="flex-1 relative w-full" ref={sceneRef}>
-        {/* Next Shape Indicator */}
+        {/* Next Shape Indicator - Follows mouse along red dotted line */}
         {!isGameOver && nextShapeType === 'circle' && (
           <div 
-            className="absolute top-4 left-1/2 -translate-x-1/2 pointer-events-none opacity-50"
+            className="absolute pointer-events-none opacity-50"
             style={{
+              left: `${mouseX - ANIMAL_TYPES[nextAnimalIndex].radius}px`,
+              top: `${50 - ANIMAL_TYPES[nextAnimalIndex].radius}px`,
               width: ANIMAL_TYPES[nextAnimalIndex].radius * 2,
               height: ANIMAL_TYPES[nextAnimalIndex].radius * 2,
               backgroundColor: ANIMAL_TYPES[nextAnimalIndex].color,
               borderRadius: '50%',
+              willChange: 'left',
             }}
           />
         )}
         {!isGameOver && nextShapeType === 'triangle' && (
           <div 
-            className="absolute top-4 left-1/2 -translate-x-1/2 pointer-events-none opacity-50"
+            className="absolute pointer-events-none opacity-50"
             style={{
+              left: `${mouseX - 50 * CIRCLE_SCALE}px`,
+              top: `${50 - 50 * CIRCLE_SCALE}px`,
               width: 50 * CIRCLE_SCALE * 2,
               height: 50 * CIRCLE_SCALE * 2,
+              willChange: 'left',
             }}
           >
             <Triangle 
@@ -547,6 +682,20 @@ export function PendaGame({ onGameOver, currentHighScore, onExit }: PendaGamePro
               fill="currentColor"
             />
           </div>
+        )}
+        {!isGameOver && nextShapeType === 'eater' && (
+          <div 
+            className="absolute pointer-events-none opacity-50"
+            style={{
+              left: `${mouseX - 20}px`,
+              top: `${50 - 20}px`,
+              width: 40,
+              height: 40,
+              backgroundColor: '#ff0000',
+              border: '2px solid #cc0000',
+              willChange: 'left',
+            }}
+          />
         )}
         
         {/* Drop Line */}

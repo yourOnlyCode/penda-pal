@@ -23,15 +23,24 @@ export function ActivityCalendar({ userId, penpalId }: ActivityCalendarProps) {
   const [fullHistory, setFullHistory] = useState<ActivityData[]>([])
   const [loadingFullHistory, setLoadingFullHistory] = useState(false)
 
+  // Helper function to get local date string (YYYY-MM-DD) without timezone issues
+  const getLocalDateString = (date: Date): string => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
   useEffect(() => {
     const fetchActivities = async () => {
       setLoading(true)
       try {
-        // Get last 7 days
-        const endDate = new Date()
-        const startDate = new Date()
-        startDate.setDate(startDate.getDate() - 6)
-        startDate.setHours(0, 0, 0, 0)
+        // Get last 7 days (today + 6 previous days)
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const startDate = new Date(today)
+        startDate.setDate(startDate.getDate() - 6) // 6 days ago
+        const endDate = new Date(today)
         endDate.setHours(23, 59, 59, 999)
 
         // Fetch daily statuses
@@ -51,14 +60,14 @@ export function ActivityCalendar({ userId, penpalId }: ActivityCalendarProps) {
           }
         }
 
-        // Create activity map for last 7 days
+        // Create activity map for last 7 days using local dates
         const activityMap = new Map<string, ActivityData>()
         
         // Initialize all 7 days
         for (let i = 0; i < 7; i++) {
           const date = new Date(startDate)
           date.setDate(date.getDate() + i)
-          const dateStr = date.toISOString().split('T')[0]
+          const dateStr = getLocalDateString(date)
           activityMap.set(dateStr, {
             date: dateStr,
             hasStatus: false,
@@ -66,25 +75,36 @@ export function ActivityCalendar({ userId, penpalId }: ActivityCalendarProps) {
           })
         }
 
-        // Mark days with statuses
+        // Mark days with statuses (using local date)
         statuses.forEach((status) => {
-          const dateStr = new Date(status.date).toISOString().split('T')[0]
+          // status.date is a Date object from Prisma
+          const statusDate = new Date(status.date)
+          const dateStr = getLocalDateString(statusDate)
           const activity = activityMap.get(dateStr)
           if (activity) {
             activity.hasStatus = true
           }
         })
 
-        // Mark days with messages
+        // Mark days with messages (filter by date range and use local date)
         messages.forEach((message) => {
-          const dateStr = new Date(message.createdAt).toISOString().split('T')[0]
-          const activity = activityMap.get(dateStr)
-          if (activity) {
-            activity.hasMessage = true
+          const messageDate = new Date(message.createdAt)
+          // Only include messages within the date range
+          if (messageDate >= startDate && messageDate <= endDate) {
+            const dateStr = getLocalDateString(messageDate)
+            const activity = activityMap.get(dateStr)
+            if (activity) {
+              activity.hasMessage = true
+            }
           }
         })
 
-        setActivities(Array.from(activityMap.values()))
+        // Sort activities by date to ensure correct order
+        const sortedActivities = Array.from(activityMap.values()).sort((a, b) => 
+          new Date(a.date).getTime() - new Date(b.date).getTime()
+        )
+        
+        setActivities(sortedActivities)
       } catch (error) {
         console.error('Failed to fetch activities:', error)
       } finally {
@@ -119,9 +139,18 @@ export function ActivityCalendar({ userId, penpalId }: ActivityCalendarProps) {
       // Create activity map for all dates
       const activityMap = new Map<string, ActivityData>()
 
+      // Helper function to get local date string
+      const getLocalDateString = (date: Date): string => {
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
+      }
+
       // Add all status dates
       statuses.forEach((status) => {
-        const dateStr = new Date(status.date).toISOString().split('T')[0]
+        const statusDate = new Date(status.date)
+        const dateStr = getLocalDateString(statusDate)
         if (!activityMap.has(dateStr)) {
           activityMap.set(dateStr, {
             date: dateStr,
@@ -134,7 +163,8 @@ export function ActivityCalendar({ userId, penpalId }: ActivityCalendarProps) {
 
       // Add all message dates
       messages.forEach((message) => {
-        const dateStr = new Date(message.createdAt).toISOString().split('T')[0]
+        const messageDate = new Date(message.createdAt)
+        const dateStr = getLocalDateString(messageDate)
         if (!activityMap.has(dateStr)) {
           activityMap.set(dateStr, {
             date: dateStr,

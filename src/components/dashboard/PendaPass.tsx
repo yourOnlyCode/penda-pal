@@ -10,7 +10,7 @@ import { ActivityCalendar } from './ActivityCalendar'
 import { PendaPassEditor } from './PendaPassEditor'
 import { PendaGame } from './PendaGame'
 import { getThemeColors, PendaPassTheme } from '@/lib/themes'
-import { CheckCircle2, Gamepad2 } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
 
 interface PendaPassProps {
   user: User & {
@@ -21,12 +21,14 @@ interface PendaPassProps {
     placesWishlist?: string[]
     pendapassTheme?: string | null
     highScore?: number | null
+    pendaCoins?: number | null
   }
   isOwnProfile?: boolean
   activePenpalId?: string
+  onGameModeToggleRef?: (toggle: () => void) => void
 }
 
-export function PendaPass({ user, isOwnProfile = false, activePenpalId }: PendaPassProps) {
+export function PendaPass({ user, isOwnProfile = false, activePenpalId, onGameModeToggleRef }: PendaPassProps) {
   const router = useRouter()
   const [isEditMode, setIsEditMode] = useState(false)
   const [isEditorOpen, setIsEditorOpen] = useState(false)
@@ -72,6 +74,13 @@ export function PendaPass({ user, isOwnProfile = false, activePenpalId }: PendaP
       setIsFlipped(false)
     }
   }
+
+  // Expose toggleGameMode to parent via callback
+  useEffect(() => {
+    if (onGameModeToggleRef && isOwnProfile) {
+      onGameModeToggleRef(toggleGameMode)
+    }
+  }, [onGameModeToggleRef, isOwnProfile])
 
   // Ensure flip back goes to main view
   const handleFlip = () => {
@@ -281,22 +290,18 @@ export function PendaPass({ user, isOwnProfile = false, activePenpalId }: PendaP
             <span className="text-white font-bold tracking-widest text-lg">PENDAPASS</span>
             <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
           </div>
-          
-          {/* Top Center Game Button */}
-          {isOwnProfile && (
-            <button
-              onClick={toggleGameMode}
-              className="absolute left-1/2 -translate-x-1/2 p-2 rounded-full bg-white/20 text-white hover:bg-white/30 transition-all hover:scale-110 active:scale-95"
-              title="Play Penda Game"
-            >
-              <Gamepad2 size={20} />
-            </button>
-          )}
 
           <div className="flex items-center gap-3">
-            
-            <div className="text-white/60 text-xs font-mono tracking-widest">
-              {user.id.slice(-8).toUpperCase()}
+            <div className="flex flex-col items-end gap-1">
+              <div className="text-white/60 text-xs font-mono tracking-widest">
+                {user.id.slice(-8).toUpperCase()}
+              </div>
+              {user.pendaCoins !== undefined && user.pendaCoins !== null && (
+                <div className="text-white/80 text-xs font-semibold flex items-center gap-1">
+                  <span>🪙</span>
+                  <span>{user.pendaCoins.toLocaleString()}</span>
+                </div>
+              )}
             </div>
             {isOwnProfile && (
               <button
@@ -626,6 +631,7 @@ export function PendaPass({ user, isOwnProfile = false, activePenpalId }: PendaP
                       className="hidden"
                       onChange={handleMediaSelect}
                     />
+                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500">add image</span>
                     <button
                       onClick={() => fileInputRef.current?.click()}
                       className="p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded"
@@ -772,8 +778,16 @@ export function PendaPass({ user, isOwnProfile = false, activePenpalId }: PendaP
                     <span className="text-white font-bold tracking-widest text-lg">TRAVEL STAMPS</span>
                     <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
                   </div>
-                  <div className="text-white/60 text-xs font-mono tracking-widest">
-                    {user.id.slice(-8).toUpperCase()}
+                  <div className="flex flex-col items-end gap-1">
+                    <div className="text-white/60 text-xs font-mono tracking-widest">
+                      {user.id.slice(-8).toUpperCase()}
+                    </div>
+                    {user.pendaCoins !== undefined && user.pendaCoins !== null && (
+                      <div className="text-white/80 text-xs font-semibold flex items-center gap-1">
+                        <span>🪙</span>
+                        <span>{user.pendaCoins.toLocaleString()}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 

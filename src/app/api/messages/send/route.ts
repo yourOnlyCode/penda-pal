@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { prisma } from '@/lib/prisma'
+import { awardPendaCoins } from '@/lib/pendaCoins'
 // TODO: Add content moderation
 // import { checkContent } from '@/lib/moderation'
 
@@ -69,7 +70,11 @@ export async function POST(req: Request) {
       },
     })
 
-    return NextResponse.json({ message })
+    // Award coins for writing to penpal
+    const coinsAwarded = 10 // Award 10 coins for writing to penpal
+    await awardPendaCoins(session.user.id, coinsAwarded, 'Writing to penpal')
+
+    return NextResponse.json({ message, coinsAwarded })
   } catch (error: any) {
     console.error('Send message error:', error)
     return NextResponse.json(
