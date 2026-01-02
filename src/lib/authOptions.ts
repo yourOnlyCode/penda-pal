@@ -7,6 +7,10 @@ import { prisma } from '@/lib/prisma'
 import { supabaseAdmin } from '@/lib/supabase'
 import bcrypt from 'bcryptjs'
 
+if (!process.env.NEXTAUTH_SECRET) {
+  throw new Error('NEXTAUTH_SECRET environment variable is not set')
+}
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   secret: process.env.NEXTAUTH_SECRET,
