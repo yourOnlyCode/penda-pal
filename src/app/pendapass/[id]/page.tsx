@@ -1,6 +1,6 @@
 import { getServerSession } from 'next-auth'
 import { redirect, notFound } from 'next/navigation'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { authOptions } from '@/lib/authOptions'
 import { TopRightControls } from '@/components/dashboard/TopRightControls'
 import { prisma } from '@/lib/prisma'
 import { Sparkles } from 'lucide-react'

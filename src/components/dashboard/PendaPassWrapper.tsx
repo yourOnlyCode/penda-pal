@@ -3,6 +3,7 @@
 import { PendaPass } from './PendaPass'
 import { FloatingDock } from './FloatingDock'
 import { User } from '@prisma/client'
+import { useState } from 'react'
 
 interface PendaPassWrapperProps {
   user: User & {

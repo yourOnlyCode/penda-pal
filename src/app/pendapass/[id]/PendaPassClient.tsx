@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { PendaPass } from '@/components/dashboard/PendaPass'
 import { FloatingDock } from '@/components/dashboard/FloatingDock'
 
@@ -19,7 +19,15 @@ export default function PendaPassClient({
   penpalUser,
   activePenpalId 
 }: PendaPassClientProps) {
-  const [gameModeToggle, setGameModeToggle] = useState<(() => void) | null>(null)
+  const gameModeToggleRef = useRef<(() => void) | null>(null)
+  const [, forceUpdate] = useState({})
+
+  // Memoize the callback to prevent infinite loops
+  const handleGameModeToggleRef = useCallback((toggle: () => void) => {
+    gameModeToggleRef.current = toggle
+    // Force a re-render so FloatingDock gets the updated function
+    forceUpdate({})
+  }, [])
 
   return (
     <>
@@ -27,14 +35,14 @@ export default function PendaPassClient({
         user={viewedUser} 
         isOwnProfile={isOwnProfile} 
         activePenpalId={activePenpalId}
-        onGameModeToggleRef={(toggle) => setGameModeToggle(() => toggle)}
+        onGameModeToggleRef={handleGameModeToggleRef}
       />
       {isOwnProfile && (
         <FloatingDock 
           user={viewedUser} 
           activePenpal={activePenpal} 
           penpalUser={penpalUser}
-          onGameModeToggle={gameModeToggle || undefined}
+          onGameModeToggle={gameModeToggleRef.current || undefined}
         />
       )}
     </>

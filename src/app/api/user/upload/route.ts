@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { authOptions } from '@/lib/authOptions'
 
 // For now, we'll accept base64 or URL strings
 // In production, you'd want to use a service like Cloudinary, AWS S3, or Supabase Storage

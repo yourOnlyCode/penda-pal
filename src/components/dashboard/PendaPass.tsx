@@ -2,7 +2,7 @@
 
 import { User } from '@prisma/client'
 import Image from 'next/image'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Edit2, MapPin, Save, X, Camera, Video, Share2, ImageIcon, Upload, Pencil, ArrowRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -64,23 +64,22 @@ export function PendaPass({ user, isOwnProfile = false, activePenpalId, onGameMo
     }
   }
 
-  // Handle Game Mode Toggle
-  const toggleGameMode = () => {
-    if (!isGameMode) {
-      setIsGameMode(true)
-      setIsFlipped(true)
-    } else {
-      setIsGameMode(false)
-      setIsFlipped(false)
-    }
-  }
+  // Handle Game Mode Toggle - memoized to prevent infinite loops
+  const toggleGameMode = useCallback(() => {
+    setIsGameMode((prev) => {
+      const newValue = !prev
+      // Update flipped state - React batches these updates automatically
+      setIsFlipped(newValue)
+      return newValue
+    })
+  }, [])
 
   // Expose toggleGameMode to parent via callback
   useEffect(() => {
     if (onGameModeToggleRef && isOwnProfile) {
       onGameModeToggleRef(toggleGameMode)
     }
-  }, [onGameModeToggleRef, isOwnProfile])
+  }, [onGameModeToggleRef, isOwnProfile, toggleGameMode])
 
   // Ensure flip back goes to main view
   const handleFlip = () => {

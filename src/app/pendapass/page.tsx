@@ -1,6 +1,6 @@
 import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { authOptions } from '@/lib/authOptions'
 import { PendaPass } from '@/components/dashboard/PendaPass'
 import { FloatingDock } from '@/components/dashboard/FloatingDock'
 import { DarkModeToggle } from '@/components/dashboard/DarkModeToggle'
