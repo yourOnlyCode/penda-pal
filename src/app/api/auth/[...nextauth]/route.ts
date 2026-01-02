@@ -8,7 +8,28 @@ const handler = NextAuth(authOptions)
 
 export async function GET(req: Request) {
   try {
-    return await handler(req)
+    // NextAuth v4 should handle App Router requests, but we need to ensure
+    // the request has the proper structure
+    const url = new URL(req.url)
+    const pathname = url.pathname
+    
+    // Extract nextauth segments from pathname (e.g., /api/auth/session -> ['session'])
+    const match = pathname.match(/\/api\/auth\/(.+)/)
+    const segments = match ? match[1].split('/') : []
+    
+    // Create a request-like object with query that NextAuth expects
+    const requestWithQuery = {
+      ...req,
+      url: req.url,
+      query: {
+        nextauth: segments,
+        ...Object.fromEntries(url.searchParams.entries()),
+      },
+      headers: req.headers,
+      method: req.method,
+    } as any
+    
+    return await handler(requestWithQuery)
   } catch (error: any) {
     console.error('NextAuth GET error:', {
       message: error?.message,
@@ -33,7 +54,28 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    return await handler(req)
+    // NextAuth v4 should handle App Router requests, but we need to ensure
+    // the request has the proper structure
+    const url = new URL(req.url)
+    const pathname = url.pathname
+    
+    // Extract nextauth segments from pathname (e.g., /api/auth/callback/credentials -> ['callback', 'credentials'])
+    const match = pathname.match(/\/api\/auth\/(.+)/)
+    const segments = match ? match[1].split('/') : []
+    
+    // Create a request-like object with query that NextAuth expects
+    const requestWithQuery = {
+      ...req,
+      url: req.url,
+      query: {
+        nextauth: segments,
+        ...Object.fromEntries(url.searchParams.entries()),
+      },
+      headers: req.headers,
+      method: req.method,
+    } as any
+    
+    return await handler(requestWithQuery)
   } catch (error: any) {
     console.error('NextAuth POST error:', {
       message: error?.message,
