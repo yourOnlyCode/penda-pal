@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/authOptions'
 import { prisma } from '@/lib/prisma'
 import * as THREE from 'three'
 
+export const dynamic = 'force-dynamic'
+
 const PLANET_RADIUS = 2
 
 // Generate a seed from date (same spots for all users on same day)
