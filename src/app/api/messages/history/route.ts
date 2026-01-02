@@ -15,6 +15,7 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url)
     const penpalId = searchParams.get('penpalId')
+    const full = searchParams.get('full') === 'true'
 
     if (!penpalId) {
       return NextResponse.json({ error: 'penpalId is required' }, { status: 400 })
@@ -36,15 +37,22 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Penpal relationship not found' }, { status: 404 })
     }
 
-    // Get messages for this penpal (for activity tracking only)
+    // Get messages for this penpal
     const messages = await prisma.message.findMany({
       where: {
         penpalId: penpalId,
-        senderId: session.user.id, // Only messages sent by current user for activity calendar
+        ...(full ? {} : { senderId: session.user.id }), // If full=true, get all messages; otherwise only sent by current user
       },
-      select: {
-        createdAt: true,
-      },
+      select: full
+        ? {
+            id: true,
+            content: true,
+            senderId: true,
+            createdAt: true,
+          }
+        : {
+            createdAt: true,
+          },
       orderBy: { createdAt: 'desc' },
     })
 

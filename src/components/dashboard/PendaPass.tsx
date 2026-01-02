@@ -731,22 +731,20 @@ export function PendaPass({ user, isOwnProfile = false, activePenpalId, onGameMo
             </div>
           )}
 
-          {/* Flip Button - Triangular Corner */}
-          {isOwnProfile && (
-            <button
-              onClick={() => setIsFlipped(!isFlipped)}
-              className="absolute bottom-0 right-0 w-16 h-16 text-white shadow-lg transition-all hover:scale-110 active:scale-95 z-20 hover:opacity-90"
-              style={{
-                clipPath: 'polygon(100% 0, 100% 100%, 0 100%)',
-                background: themeColors.primaryGradient,
-              }}
-              title="Flip PendaPass"
-            >
-              <div className="absolute bottom-1 right-1">
-                <ArrowRight size={20} className="rotate-[-45deg]" />
-              </div>
-            </button>
-          )}
+          {/* Flip Button - Triangular Corner - Allow flipping for all users */}
+          <button
+            onClick={() => setIsFlipped(!isFlipped)}
+            className="absolute bottom-0 right-0 w-16 h-16 text-white shadow-lg transition-all hover:scale-110 active:scale-95 z-20 hover:opacity-90"
+            style={{
+              clipPath: 'polygon(100% 0, 100% 100%, 0 100%)',
+              background: themeColors.primaryGradient,
+            }}
+            title="Flip PendaPass"
+          >
+            <div className="absolute bottom-1 right-1">
+              <ArrowRight size={20} className="rotate-[-45deg]" />
+            </div>
+          </button>
         </div>
 
           {/* Back Side - Destination Stamps OR Game */}
@@ -889,8 +887,8 @@ export function PendaPass({ user, isOwnProfile = false, activePenpalId, onGameMo
               </>
             )}
 
-            {/* Flip Button - Triangular Corner - Only show when not in game mode */}
-            {isOwnProfile && !isGameMode && (
+            {/* Flip Button - Triangular Corner - Show when not in game mode (game mode only for own profile) */}
+            {!isGameMode && (
               <button
                 onClick={handleFlip}
                 className="absolute bottom-0 right-0 w-16 h-16 text-white shadow-lg transition-all hover:scale-110 active:scale-95 z-20 hover:opacity-90"

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { User, Penpal } from '@prisma/client'
 import { RequestPenpalButton } from './RequestPenpalButton'
 import { Button } from '@/components/ui/button'
-import { Mail, Send, X, Inbox, Gamepad2, Globe } from 'lucide-react'
+import { Mail, Send, X, Inbox, Gamepad2, Globe, User as UserIcon } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { PendaPassTheme, getThemeColors } from '@/lib/themes'
@@ -171,6 +171,19 @@ export function FloatingDock({ user, activePenpal, penpalUser, onGameModeToggle 
             <RequestPenpalButton userId={user.id} isPending={isPending} theme={theme} />
           )}
         </div>
+
+        {/* View Penpal's PendaPass button (only when has penpal) */}
+        {hasPenpal && penpalUser && (
+          <button
+            onClick={() => {
+              router.push(`/pendapass/${penpalUser.id}`)
+            }}
+            className="p-2 rounded-lg bg-white/60 dark:bg-zinc-800/60 hover:bg-white/80 dark:hover:bg-zinc-800/80 transition-all hover:scale-110 active:scale-95 border border-zinc-200 dark:border-zinc-700"
+            title="View Penpal's PendaPass"
+          >
+            <UserIcon size={20} className="text-zinc-700 dark:text-zinc-300" />
+          </button>
+        )}
       </div>
     </div>
   )

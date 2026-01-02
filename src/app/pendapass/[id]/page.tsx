@@ -67,9 +67,10 @@ export default async function PendaPassIdPage({ params }: PendaPassPageProps) {
   // Check if this is the current user's own PendaPass
   const isOwnProfile = session.user.id === params.id
 
-  // Get active penpal (if any) - only for own profile
+  // Get active penpal (if any) - for own profile or when viewing penpal's profile
   let activePenpal = null
   let penpalUser = null
+  let isViewingPenpal = false
 
   if (isOwnProfile) {
     const userWithRelations = viewedUser as any
@@ -79,6 +80,22 @@ export default async function PendaPassIdPage({ params }: PendaPassPageProps) {
         ? activePenpal.user2
         : activePenpal.user1
       : null
+  } else {
+    // Check if the viewed user is the current user's penpal
+    const userPenpals = await prisma.penpal.findFirst({
+      where: {
+        OR: [
+          { user1Id: session.user.id, user2Id: params.id, status: 'active' },
+          { user1Id: params.id, user2Id: session.user.id, status: 'active' },
+        ],
+      },
+    })
+
+    if (userPenpals) {
+      isViewingPenpal = true
+      activePenpal = userPenpals
+      penpalUser = viewedUser
+    }
   }
 
   return (
@@ -112,6 +129,8 @@ export default async function PendaPassIdPage({ params }: PendaPassPageProps) {
             activePenpal={activePenpal} 
             penpalUser={penpalUser}
             activePenpalId={activePenpal?.id}
+            isViewingPenpal={isViewingPenpal}
+            currentUserId={session.user.id}
           />
         </div>
       </div>
